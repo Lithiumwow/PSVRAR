@@ -18,11 +18,12 @@ ELF := unrar_extract.elf
 SOURCES := main.c
 
 CFLAGS := -Wall -Werror -g -I.
+LDFLAGS := -lkernel
 
 all: $(ELF)
 
 $(ELF): $(SOURCES)
-	$(CC) $(CFLAGS) -o $@ $(SOURCES)
+	$(CC) $(CFLAGS) -o $@ $(SOURCES) $(LDFLAGS)
 
 clean:
 	rm -f $(ELF)
