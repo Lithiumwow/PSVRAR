@@ -31,4 +31,7 @@ int unregister_game(const char *title_id);
 // Check if game is already registered
 int is_game_registered(const char *title_id);
 
+// Send notification to PS5 (from main.c)
+void send_notification(const char *message);
+
 #endif // GAME_REGISTER_H

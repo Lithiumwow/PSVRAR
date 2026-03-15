@@ -39,7 +39,7 @@ typedef struct notify_request {
 
 extern int sceKernelSendNotificationRequest(int, notify_request_t*, size_t, int);
 
-static void send_notification(const char *msg) {
+void send_notification(const char *msg) {
 	notify_request_t req;
 	memset(&req, 0, sizeof(req));
 	strncpy(req.message, msg, sizeof(req.message) - 1);
@@ -326,13 +326,25 @@ static int extract_rar(const char *rar_path, const char *out_dir) {
 	// Auto-register game if extracted successfully
 	if (extracted > 0) {
 		fprintf(stdout, "Checking for game registration...\n");
-		send_notification("🎮 Registering game...");
+		send_notification("🔍 Looking for game data...");
 		
-		if (auto_register_game(out_dir) == 0) {
+		int reg_result = auto_register_game(out_dir);
+		if (reg_result == 0) {
 			send_notification("✅ Game registered!");
 			fprintf(stdout, "✅ Game registered and ready to play!\n");
 		} else {
-			fprintf(stdout, "ℹ️  No param.json found or already registered\n");
+			// More detailed error reporting
+			char param_test[PATH_MAX];
+			snprintf(param_test, sizeof(param_test), "%s/sce_sys/param.json", out_dir);
+			
+			struct stat st;
+			if (stat(param_test, &st) == 0) {
+				send_notification("⚠️ Game found but registration failed");
+				fprintf(stdout, "⚠️  Found param.json but registration failed (may need elevated privileges)\n");
+			} else {
+				send_notification("ℹ️ No game data found");
+				fprintf(stdout, "ℹ️  No param.json found (not a PS5 game)\n");
+			}
 		}
 	}
 
@@ -399,6 +411,48 @@ static int scan_directory_for_rars(const char *dir_path, int *total_found, int *
 	return found;
 }
 
+// Recursive function to scan directories for games
+static void scan_for_games_recursive(const char *dir_path, int depth, int *total_games_registered) {
+	DIR *dir;
+	struct dirent *entry;
+	struct stat statbuf;
+	char full_path[PATH_MAX];
+	char param_path[PATH_MAX];
+	
+	// Limit recursion depth to avoid infinite loops
+	if (depth > 3) return;
+	
+	dir = opendir(dir_path);
+	if (!dir) return;
+	
+	while ((entry = readdir(dir)) != NULL) {
+		if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0)
+			continue;
+		
+		snprintf(full_path, sizeof(full_path), "%s/%s", dir_path, entry->d_name);
+		
+		if (stat(full_path, &statbuf) != 0 || !S_ISDIR(statbuf.st_mode))
+			continue;
+		
+		// Check if THIS directory has sce_sys/param.json
+		snprintf(param_path, sizeof(param_path), "%s/sce_sys/param.json", full_path);
+		
+		if (stat(param_path, &statbuf) == 0) {
+			fprintf(stdout, "[AUTO-REGISTER] Found game: %s\n", full_path);
+			
+			if (auto_register_game(full_path) == 0) {
+				(*total_games_registered)++;
+				fprintf(stdout, "[AUTO-REGISTER] ✅ Registered: %s\n", entry->d_name);
+			}
+		} else {
+			// Recurse into subdirectory
+			scan_for_games_recursive(full_path, depth + 1, total_games_registered);
+		}
+	}
+	
+	closedir(dir);
+}
+
 static void auto_scan_mode(void) {
 	const char *scan_paths[] = {
 		"/data/games",
@@ -420,6 +474,7 @@ static void auto_scan_mode(void) {
 
 	int total_found = 0;
 	int total_processed = 0;
+	int total_games_registered = 0;
 	int i;
 	char notify_buf[256];
 
@@ -429,10 +484,20 @@ static void auto_scan_mode(void) {
 	fprintf(stdout, "╚════════════════════════════════════════╝\n\n");
 
 	send_notification("! Welcome to PSVRAR by Lithiumwow");
-	send_notification("🔍 Scanning for RAR files...");
+	send_notification("🔍 Scanning for RARs and games...");
 
+	// First pass: Extract RAR files
 	for (i = 0; scan_paths[i] != NULL; i++) {
 		scan_directory_for_rars(scan_paths[i], &total_found, &total_processed);
+	}
+
+	// Second pass: Register any extracted games that aren't registered yet
+	fprintf(stdout, "\n[AUTO-REGISTER] Scanning for unregistered games (recursive)...\n");
+	send_notification("🎮 Checking for games to register...");
+	
+	for (i = 0; scan_paths[i] != NULL; i++) {
+		fprintf(stdout, "[AUTO-REGISTER] Scanning: %s\n", scan_paths[i]);
+		scan_for_games_recursive(scan_paths[i], 0, &total_games_registered);
 	}
 
 	fprintf(stdout, "\n╔════════════════════════════════════════╗\n");
@@ -440,14 +505,44 @@ static void auto_scan_mode(void) {
 	fprintf(stdout, "╚════════════════════════════════════════╝\n");
 	fprintf(stdout, "  Total RAR files found: %d\n", total_found);
 	fprintf(stdout, "  Successfully extracted: %d\n", total_processed);
-	fprintf(stdout, "  Failed: %d\n\n", total_found - total_processed);
+	fprintf(stdout, "  Failed: %d\n", total_found - total_processed);
+	fprintf(stdout, "  Games registered: %d\n\n", total_games_registered);
 
-	if (total_found == 0) {
-		send_notification("ℹ️ No RAR files found");
+	if (total_games_registered > 0) {
+		snprintf(notify_buf, sizeof(notify_buf), "✅ %d games registered!", total_games_registered);
+		send_notification(notify_buf);
+	} else if (total_found == 0) {
+		// Check if we found games but couldn't register them
+		DIR *test_dir = opendir("/data/games");
+		int found_unregistered = 0;
+		if (test_dir) {
+			struct dirent *entry;
+			while ((entry = readdir(test_dir)) != NULL && found_unregistered < 3) {
+				char test_path[PATH_MAX];
+				snprintf(test_path, sizeof(test_path), "/data/games/%s/sce_sys/param.json", entry->d_name);
+				struct stat st;
+				if (stat(test_path, &st) == 0) {
+					found_unregistered++;
+				}
+			}
+			closedir(test_dir);
+		}
+		
+		if (found_unregistered > 0) {
+			send_notification("ℹ️ Games found but need Itemzflow/SMP to mount");
+			fprintf(stdout, "\nℹ️  Found %d games but registration needs elevated privileges\n", found_unregistered);
+			fprintf(stdout, "💡 Solution: Open Itemzflow or run ShadowMountPlus to mount games\n\n");
+		} else {
+			send_notification("ℹ️ No RARs or games found");
+		}
+	}
+
+	if (total_found == 0 && total_games_registered == 0) {
+		send_notification("ℹ️ No RARs or new games found");
 	} else if (total_processed == total_found) {
 		snprintf(notify_buf, sizeof(notify_buf), "✅ All %d RARs extracted!", total_found);
 		send_notification(notify_buf);
-	} else {
+	} else if (total_found > 0) {
 		snprintf(notify_buf, sizeof(notify_buf), "⚠️ %d/%d RARs extracted", total_processed, total_found);
 		send_notification(notify_buf);
 	}

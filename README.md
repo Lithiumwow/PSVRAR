@@ -72,14 +72,33 @@ Just run the payload - it will find and extract all RAR files:
 nc 192.168.1.100 9021 < unrar_extract.elf
 ```
 
-### Specific File (if supported by your loader)
-```bash
-# Extract specific RAR
-./unrar_extract.elf /data/games/game.rar
+## ⚠️ IMPORTANT: Making Games Appear in Library
 
-# Extract to specific directory
-./unrar_extract.elf /data/games/game.rar /data/games/output/
+After extraction, games need to be registered with the PS5 system. There are **three methods**:
+
+### Method 1: Extract to etaHEN Games Folder (Automatic)
+Extract directly to `/data/etaHEN/games/` and games appear automatically:
+```bash
+# Games in /data/etaHEN/games/ are auto-detected by the system
 ```
+
+### Method 2: Use Itemzflow Refresh (Recommended)
+After running `unrar_extract.elf`:
+1. Open **Itemzflow** app on PS5
+2. Select **"Refresh Games"** option
+3. Games appear in both Itemzflow and PS5 home menu instantly!
+
+### Method 3: Manual Path Registration
+If games are extracted elsewhere (USB drives, custom locations):
+1. Open **Itemzflow**
+2. Go to **Settings** → **Add Game Path**
+3. Manually add the path where games were extracted
+4. Click **Refresh**
+
+### Method 4: ShadowMountPlus (For .exfat images)
+If you're using game images in `.exfat` format:
+- Load **ShadowMountPlus** payload
+- Games mount automatically without manual steps
 
 ## 🔧 How It Works
 
@@ -95,8 +114,28 @@ nc 192.168.1.100 9021 < unrar_extract.elf
 
 3. **Register Phase**
    - Parses `param.json` for game info
-   - Creates symbolic links for PS5 library
-   - Game appears in your PS5 library automatically!
+   - Creates symbolic links in `/system_data/priv/mnt/app/`
+   - **Important:** Games require one additional step to appear (see above)
+
+## 📂 Best Practices
+
+### For Automatic Registration
+**Extract to:** `/data/etaHEN/games/`
+- Games appear automatically
+- No manual steps required
+- Works with all homebrew managers
+
+### For USB/External Storage
+**After extraction:**
+1. Run `unrar_extract.elf` (creates symlinks)
+2. Open Itemzflow → "Refresh Games"
+3. Games appear in library
+
+### For Game Images (.exfat)
+**Use ShadowMountPlus:**
+- Handles `.exfat` formatted game images
+- Auto-mounts without extraction
+- Best for disk images
 
 ## 📊 Technical Details
 
@@ -150,9 +189,19 @@ This tool is for educational and personal use on jailbroken PS5 consoles. Always
 - Ensure proper file permissions
 
 ### "Game not appearing in library"
-- Restart PS5
-- Check `param.json` exists in extracted folder
-- Verify `titleId` is valid
+**Solution 1 (Fastest):** Open Itemzflow → "Refresh Games"
+**Solution 2:** Extract to `/data/etaHEN/games/` instead (auto-detects)
+**Solution 3:** Settings → System → Rebuild Database (5-10 min)
+**Solution 4:** Load ShadowMountPlus (for .exfat images)
+
+### "Itemzflow daemon failed"
+- Itemzflow's background service isn't running
+- **Solution:** Use Itemzflow's built-in "Refresh Games" option instead
+- This works even when daemon is down
+
+### "Games on USB not appearing"
+- Symlinks created but PS5 hasn't refreshed
+- **Solution:** Open Itemzflow → "Refresh Games" or manually add path in Itemzflow settings
 
 ## 🔗 Related Projects
 
