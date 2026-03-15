@@ -208,29 +208,17 @@ This tool is for educational and personal use on jailbroken PS5 consoles. Always
 - **[PS-Share](https://github.com/Lithiumwow/PS-Share)** - Web-based PS5 screen streaming
 - **[PSVRAR Suite](https://github.com/Lithiumwow/PSVRAR-Suite)** - Advanced RAR management with web UI
 
-## 📚 Documentation
-
-Detailed guides available in the [`docs/`](docs/) folder:
-
-- **[QUICK_START.md](docs/QUICK_START.md)** - Quick reference guide (3 steps)
-- **[GAME_REGISTRATION_GUIDE.md](docs/GAME_REGISTRATION_GUIDE.md)** - Complete registration methods
-- **[PERFORMANCE_OPTIMIZATION.md](docs/PERFORMANCE_OPTIMIZATION.md)** - Speed optimization details
-- **[TRIANGLE_SOLUTION.md](docs/TRIANGLE_SOLUTION.md)** - Manual refresh workflow
-- **[PATH_FIX.md](docs/PATH_FIX.md)** - Symlink and path troubleshooting
-- **[DATABASE_REFRESH_FIX.md](docs/DATABASE_REFRESH_FIX.md)** - Database refresh technical details
-
 ## 📝 Changelog
 
 ### v2.2 TURBO+ (March 15, 2026)
 - **2x faster extraction** - Increased buffers to 8MB, fixed buffer bug
 - RAM cache increased to 4MB for small files
 - Improved Itemzflow refresh workflow
-- Added comprehensive game registration guide
 
 ### v2.1 (March 15, 2026)
 - Added Itemzflow refresh support
 - Symlink-based game mounting
-- Multiple registration methods documented
+- Multiple registration methods
 
 ### v1.0.0 (March 2026)
 - Initial release

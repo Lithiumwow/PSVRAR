@@ -5,6 +5,9 @@
 *.so
 build/
 
+# Documentation (keep local only)
+docs/
+
 # IDE files
 .vscode/
 .idea/
