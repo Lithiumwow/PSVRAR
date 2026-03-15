@@ -26,8 +26,8 @@
 #define PATH_MAX 4096
 #endif
 
-#define WRITE_BUFFER_SIZE (4 * 1024 * 1024)  // 4MB write buffer (increased from 1MB)
-#define SMALL_FILE_THRESHOLD (1024 * 1024)  // 1MB - extract to memory first (increased from 256KB)
+#define WRITE_BUFFER_SIZE (8 * 1024 * 1024)  // 8MB write buffer (was 4MB)
+#define SMALL_FILE_THRESHOLD (4 * 1024 * 1024)  // 4MB - extract to memory first (was 1MB)
 
 #include "dmc_unrar.c"
 #include "game_register.c"  // Include game registration support
@@ -150,6 +150,32 @@ static int extract_small_file_optimized(dmc_unrar_archive *archive, dmc_unrar_si
 	return 0;
 }
 
+static int extract_large_file_optimized(dmc_unrar_archive *archive, dmc_unrar_size_t index, const char *out_path) {
+	dmc_unrar_return ret;
+	FILE *fp;
+	char *write_buffer;
+
+	fp = fopen(out_path, "wb");
+	if (!fp) {
+		return -1;
+	}
+
+	// Allocate and set large write buffer for maximum I/O performance
+	write_buffer = malloc(WRITE_BUFFER_SIZE);
+	if (write_buffer) {
+		setvbuf(fp, write_buffer, _IOFBF, WRITE_BUFFER_SIZE);
+	}
+
+	ret = dmc_unrar_extract_file_to_path(archive, index, out_path, NULL, false);
+	
+	fclose(fp);
+	if (write_buffer) {
+		free(write_buffer);
+	}
+
+	return (ret == DMC_UNRAR_OK) ? 0 : -1;
+}
+
 static int extract_rar(const char *rar_path, const char *out_dir) {
 	dmc_unrar_archive archive;
 	dmc_unrar_return ret;
@@ -199,7 +225,7 @@ static int extract_rar(const char *rar_path, const char *out_dir) {
 	send_notification(notify_buf);
 	
 	// Show optimization info
-	send_notification("🚀 TURBO Mode: 4MB buffers + 1MB RAM cache");
+	send_notification("🚀 TURBO Mode: 8MB buffers + 4MB RAM cache");
 
 	if (create_directory_recursive(out_dir) != 0) {
 		dmc_unrar_archive_close(&archive);
@@ -265,7 +291,7 @@ static int extract_rar(const char *rar_path, const char *out_dir) {
 		}
 
 		if (file_stat->uncompressed_size <= SMALL_FILE_THRESHOLD) {
-			// Fast path: extract to memory for files < 1MB
+			// Fast path: extract to memory for files < 4MB
 			if (extract_small_file_optimized(&archive, i, out_path, file_stat->uncompressed_size) != 0) {
 				failed++;
 			} else {
@@ -273,20 +299,8 @@ static int extract_rar(const char *rar_path, const char *out_dir) {
 				processed_bytes += file_stat->uncompressed_size;
 			}
 		} else {
-			// Large files: extract directly to disk with optimized buffering
-			FILE *fp = fopen(out_path, "wb");
-			if (fp) {
-				// Set large write buffer for better I/O performance
-				char *write_buf = malloc(WRITE_BUFFER_SIZE);
-				if (write_buf) {
-					setvbuf(fp, write_buf, _IOFBF, WRITE_BUFFER_SIZE);
-				}
-				fclose(fp);
-				if (write_buf) free(write_buf);
-			}
-			
-			ret = dmc_unrar_extract_file_to_path(&archive, i, out_path, NULL, false);
-			if (ret != DMC_UNRAR_OK) {
+			// Large files: extract with optimized 8MB buffering
+			if (extract_large_file_optimized(&archive, i, out_path) != 0) {
 				failed++;
 			} else {
 				extracted++;
