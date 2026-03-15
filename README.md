@@ -1,0 +1,175 @@
+# PSVRAR - PS5 RAR Extractor
+
+**Standalone RAR extraction payload for jailbroken PS5**
+
+Extract RAR archives directly on your PS5 with automatic game registration!
+
+![Status](https://img.shields.io/badge/status-working-success)
+![Platform](https://img.shields.io/badge/platform-PS5-blue)
+![License](https://img.shields.io/badge/license-GPL--2.0-green)
+
+## 🎯 Features
+
+- ✅ Extract RAR archives on PS5
+- ✅ Automatic game registration (ShadowMountPlus-style)
+- ✅ Progress notifications
+- ✅ Scans common install locations
+- ✅ Simple command-line usage
+
+## 🚀 Quick Start
+
+### For Users
+
+1. **Download the ELF**
+   - Get `unrar_extract.elf` from [Releases](https://github.com/Lithiumwow/PSVRAR/releases)
+
+2. **Place RAR file on PS5**
+   - Upload to `/data/games/`, `/mnt/usb0/`, or any accessible location
+
+3. **Send payload to PS5**
+   ```bash
+   nc PS5_IP 9021 < unrar_extract.elf
+   ```
+
+4. **The extractor will:**
+   - Scan for RAR files automatically
+   - Extract to the same directory
+   - Register the game in your PS5 library
+   - Send progress notifications
+
+### For Developers
+
+**Prerequisites:**
+- [ps5-payload-dev/sdk](https://github.com/ps5-payload-dev/sdk)
+- [ps5-payload-dev/elfldr](https://github.com/ps5-payload-dev/elfldr)
+
+**Build:**
+```bash
+# Set SDK path
+export PS5_PAYLOAD_SDK=/path/to/ps5-payload-sdk
+
+# Build
+cd unrar_extract
+make
+
+# Output: unrar_extract.elf
+```
+
+## 📋 Monitored Locations
+
+The extractor automatically scans:
+- `/data/games/`
+- `/mnt/usb0` through `/mnt/usb7`
+- `/mnt/ext0` and `/mnt/ext1`
+- `/data/etaHEN/games/`
+- `/user/temp/`
+
+## 🎮 Usage Examples
+
+### Automatic Scan
+Just run the payload - it will find and extract all RAR files:
+```bash
+nc 192.168.1.100 9021 < unrar_extract.elf
+```
+
+### Specific File (if supported by your loader)
+```bash
+# Extract specific RAR
+./unrar_extract.elf /data/games/game.rar
+
+# Extract to specific directory
+./unrar_extract.elf /data/games/game.rar /data/games/output/
+```
+
+## 🔧 How It Works
+
+1. **Scan Phase**
+   - Searches common PS5 game locations
+   - Identifies RAR archives
+   - Displays notification: "RAR file found"
+
+2. **Extract Phase**
+   - Extracts archive in place
+   - Shows progress notifications with percentages
+   - Displays notification: "Uncompressing..."
+
+3. **Register Phase**
+   - Parses `param.json` for game info
+   - Creates symbolic links for PS5 library
+   - Game appears in your PS5 library automatically!
+
+## 📊 Technical Details
+
+**Libraries Used:**
+- **dmc_unrar** - Single-file RAR extraction library (GPL-2.0)
+- **ps5-payload-dev/sdk** - PS5 payload development SDK
+
+**File Structure:**
+```
+unrar_extract/
+├── main.c              # Main extraction logic
+├── dmc_unrar.c         # RAR library
+├── game_register.c     # Auto-registration
+├── game_register.h
+├── Makefile
+└── README.md
+```
+
+**Build Output:**
+- `unrar_extract.elf` - PS5 executable payload
+- Size: ~80-100KB
+- Target: FreeBSD (PS5 OS)
+
+## 🤝 Credits
+
+**Author:** Lithiumwow
+
+**Dependencies:**
+- [ps5-payload-dev/sdk](https://github.com/ps5-payload-dev/sdk) - PS5 SDK
+- [ps5-payload-dev/elfldr](https://github.com/ps5-payload-dev/elfldr) - ELF loader
+- [dmc_unrar](https://github.com/DrMcCoy/dmc_unrar) - RAR extraction library
+
+## 📜 License
+
+GPL-2.0 License (inherited from dmc_unrar)
+
+## ⚠️ Disclaimer
+
+This tool is for educational and personal use on jailbroken PS5 consoles. Always use legal copies of games.
+
+## 🐛 Troubleshooting
+
+### "No RAR files found"
+- Ensure RAR is in one of the monitored locations
+- Check file has `.rar` extension
+- Verify file permissions
+
+### "Extraction failed"
+- RAR file may be corrupted
+- Check available disk space
+- Ensure proper file permissions
+
+### "Game not appearing in library"
+- Restart PS5
+- Check `param.json` exists in extracted folder
+- Verify `titleId` is valid
+
+## 🔗 Related Projects
+
+- **[PS-Share](https://github.com/Lithiumwow/PS-Share)** - Web-based PS5 screen streaming
+- **[PSVRAR Suite](https://github.com/Lithiumwow/PSVRAR-Suite)** - Advanced RAR management with web UI
+
+## 📝 Changelog
+
+### v1.0.0 (March 2026)
+- Initial release
+- RAR extraction
+- Automatic game registration
+- Progress notifications
+- Multi-location scanning
+
+---
+
+**Last Updated:** March 15, 2026
+
+For issues or contributions, please open an issue on GitHub!

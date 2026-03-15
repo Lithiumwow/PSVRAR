@@ -1,0 +1,29 @@
+# Build outputs
+*.elf
+*.o
+*.a
+*.so
+build/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# PS5 SDK (don't commit)
+ps5-payload-sdk/
+sdk/
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/
