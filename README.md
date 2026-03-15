@@ -21,7 +21,8 @@ Extract RAR archives directly on your PS5 with automatic game registration!
 ### For Users
 
 1. **Download the ELF**
-   - Get `unrar_extract.elf` from [Releases](https://github.com/Lithiumwow/PSVRAR/releases)
+   - Get `unrar_extract.elf` from [Releases](https://github.com/Lithiumwow/PSVRAR/releases/latest)
+   - Latest version: **v2.2 TURBO+** (376KB) - 2x faster extraction!
 
 2. **Place RAR file on PS5**
    - Upload to `/data/games/`, `/mnt/usb0/`, or any accessible location
